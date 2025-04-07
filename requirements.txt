@@ -1,0 +1,6 @@
+groq
+python-dotenv
+requests
+tavily-python
+streamlit
+webdriver-manager
