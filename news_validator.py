@@ -7,6 +7,7 @@ from tavily import TavilyClient
 from groq import Groq
 from dotenv import load_dotenv
 import streamlit as st
+import sys
 
 # Load environment variables
 load_dotenv()
@@ -20,7 +21,15 @@ print(f"TAVILY_API_KEY loaded: {'Yes' if TAVILY_API_KEY else 'No'}")
 print(f"GROQ_API_KEY loaded: {'Yes' if GROQ_API_KEY else 'No'}")
 
 # Initialize clients
+tavily_client = None
+groq_client = None
+
 try:
+    if not TAVILY_API_KEY:
+        raise ValueError("TAVILY_API_KEY is not set in environment variables")
+    if not GROQ_API_KEY:
+        raise ValueError("GROQ_API_KEY is not set in environment variables")
+        
     print("Initializing Tavily client...")
     tavily_client = TavilyClient(api_key=TAVILY_API_KEY)
     print("Tavily client initialized successfully")
@@ -30,6 +39,9 @@ try:
     print("Groq client initialized successfully")
 except Exception as e:
     print(f"Error initializing clients: {e}")
+    st.error(f"Error initializing API clients: {e}")
+    st.error("Please make sure you have set up your .env file with TAVILY_API_KEY and GROQ_API_KEY")
+    st.stop()  # Stop the Streamlit app if clients can't be initialized
 
 # System prompt for the Llama-4 model
 SYSTEM_PROMPT = """<|begin_of_text|><|header_start|>system<|header_end|>
@@ -249,6 +261,12 @@ def process_user_input(user_input, time_range="month", status_callback=None):
     Returns:
         dict or str: Dictionary containing response and sources, or error string
     """
+    # Check if clients are initialized
+    if tavily_client is None or groq_client is None:
+        error_msg = "API clients are not properly initialized. Please check your environment variables."
+        print(error_msg)
+        return {"response": error_msg, "sources": []}
+        
     # Use 'month' as default if 'none' or invalid is passed, although UI should handle this.
     effective_time_range = time_range if time_range in ["day", "week", "month", "year"] else "month"
     print(f"\n----- PROCESSING INPUT: '{user_input}' with time_range: '{time_range}' -----")
